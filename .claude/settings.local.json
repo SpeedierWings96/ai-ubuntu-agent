@@ -1,0 +1,9 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/camsh/Desktop/Test/ai-ubuntu-agent/web/src/styles/**)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
