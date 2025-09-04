@@ -85,24 +85,25 @@ git clone https://github.com/SpeedierWings96/ai-ubuntu-agent.git
 cd ai-ubuntu-agent
 ```
 
-### Step 2: Run Setup Script
+### Step 2: Run Setup (Batch)
 
-Run the PowerShell setup script:
+Run the Windows batch setup script:
 
-```powershell
-# Run as Administrator (recommended)
-.\setup.ps1
-
-# Or with options
-.\setup.ps1 -NonInteractive  # Skip prompts
-.\setup.ps1 -Development      # Development mode
+```bat
+setup.bat
 ```
+
+This will:
+- Ensure Docker is available and running
+- Create `.env` from `env.example` if missing
+- Create required `data/` directories
+- Pull images, build, and start services with Docker Compose
 
 ### Step 3: Configure API Key
 
-During setup, you'll be prompted for:
-1. **OpenRouter API Key** - Get from [openrouter.ai/keys](https://openrouter.ai/keys)
-2. **VNC Password** - For desktop access (default: changeme)
+Edit `.env` to set:
+- `OPENROUTER_API_KEY=your_key_here`
+- Optionally set `DESKTOP_VNC_PASSWORD` (default: `changeme`)
 
 ### Step 4: Access the System
 
@@ -216,7 +217,7 @@ To completely reset:
 ```powershell
 docker compose down -v
 Remove-Item -Recurse -Force data
-.\setup.ps1
+setup.bat
 ```
 
 ## Security Notes
