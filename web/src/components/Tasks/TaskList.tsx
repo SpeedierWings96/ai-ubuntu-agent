@@ -2,14 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../../lib/store';
 import { startTask, subscribeToTask } from '../../lib/websocket';
 import { format } from 'date-fns';
-import {
-  PlayIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ClockIcon,
-  ChevronRightIcon,
-  PlusIcon,
-} from '@heroicons/react/24/outline';
+import { CheckCircleIcon, XCircleIcon, ClockIcon, ChevronRightIcon, PlusIcon } from '@heroicons/react/24/outline';
 
 export default function TaskList() {
   const [showNewTask, setShowNewTask] = useState(false);

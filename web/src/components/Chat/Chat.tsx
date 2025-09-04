@@ -2,7 +2,6 @@ import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../lib/store';
 import { sendMessage } from '../../lib/websocket';
 import MessageList from './MessageList';
-import InputBar from './InputBar';
 import { PaperAirplaneIcon, TrashIcon } from '@heroicons/react/24/outline';
 
 export default function Chat() {

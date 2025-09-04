@@ -3,10 +3,8 @@ import {
   PauseIcon,
   ArrowPathIcon,
   CameraIcon,
-  DocumentDuplicateIcon,
   CommandLineIcon,
   ArrowsPointingOutIcon,
-  ArrowsPointingInIcon,
 } from '@heroicons/react/24/outline';
 import { sendDesktopKey, requestScreenshot } from '../../lib/websocket';
 import toast from 'react-hot-toast';
