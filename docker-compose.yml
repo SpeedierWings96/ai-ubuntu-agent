@@ -1,0 +1,111 @@
+version: '3.9'
+
+services:
+  desktop:
+    image: linuxserver/webtop:ubuntu-xfce
+    container_name: ai-desktop
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=UTC
+      - CUSTOM_PORT=6080
+      - CUSTOM_HTTPS_PORT=6443
+      - PASSWORD=${DESKTOP_VNC_PASSWORD}
+      - TITLE=AI Ubuntu Desktop
+    volumes:
+      - desktop-config:/config
+      - desktop-workspace:/workspace
+      - ./desktop/config:/config/custom:ro
+    ports:
+      - "${DESKTOP_HTTP_PORT:-6080}:6080"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:6080/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ai-agent-network
+
+  agent:
+    build: 
+      context: ./agent
+      dockerfile: Dockerfile
+    container_name: ai-agent
+    environment:
+      - NODE_ENV=production
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-anthropic/claude-3.5-sonnet}
+      - OPENROUTER_MAX_TOKENS=${OPENROUTER_MAX_TOKENS:-4096}
+      - OPENROUTER_TEMPERATURE=${OPENROUTER_TEMPERATURE:-0.7}
+      - OPENROUTER_FALLBACK_MODELS=${OPENROUTER_FALLBACK_MODELS:-openai/gpt-4o,anthropic/claude-3-haiku}
+      - DESKTOP_HOST=desktop
+      - DESKTOP_VNC_PORT=5900
+      - DESKTOP_HTTP_PORT=6080
+      - LOG_LEVEL=${LOG_LEVEL:-info}
+      - LOG_FORMAT=${LOG_FORMAT:-json}
+      - ENABLE_METRICS=${ENABLE_METRICS:-true}
+      - METRICS_PORT=${METRICS_PORT:-9090}
+      - MAX_FILE_SIZE_MB=${MAX_FILE_SIZE_MB:-10}
+      - MAX_EXEC_TIME_SEC=${MAX_EXEC_TIME_SEC:-30}
+      - MAX_CONCURRENT_TASKS=${MAX_CONCURRENT_TASKS:-3}
+      - ENABLE_AUTH=${ENABLE_AUTH:-false}
+      - AUTH_USERNAME=${AUTH_USERNAME:-admin}
+      - AUTH_PASSWORD=${AUTH_PASSWORD:-admin}
+      - JWT_SECRET=${JWT_SECRET:-change-in-production}
+      - RATE_LIMIT_REQUESTS_PER_MIN=${RATE_LIMIT_REQUESTS_PER_MIN:-60}
+    volumes:
+      - agent-data:/data
+      - desktop-workspace:/workspace
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "${AGENT_PORT:-9991}:9991"
+      - "${METRICS_PORT:-9090}:9090"
+    depends_on:
+      desktop:
+        condition: service_healthy
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9991/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ai-agent-network
+
+  web:
+    build:
+      context: ./web
+      dockerfile: Dockerfile
+    container_name: ai-web
+    environment:
+      - VITE_AGENT_URL=http://localhost:${AGENT_PORT:-9991}
+      - VITE_DESKTOP_URL=http://localhost:${DESKTOP_HTTP_PORT:-6080}
+      - VITE_WS_URL=ws://localhost:${AGENT_PORT:-9991}
+    ports:
+      - "${WEB_PORT:-9992}:80"
+    depends_on:
+      - agent
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - ai-agent-network
+
+volumes:
+  desktop-config:
+    driver: local
+  desktop-workspace:
+    driver: local
+  agent-data:
+    driver: local
+
+networks:
+  ai-agent-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

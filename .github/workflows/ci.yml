@@ -1,0 +1,215 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  release:
+    types: [ created ]
+
+env:
+  DOCKER_BUILDKIT: 1
+  COMPOSE_DOCKER_CLI_BUILD: 1
+
+jobs:
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install Agent Dependencies
+      working-directory: ./agent
+      run: npm ci
+    
+    - name: Install Web Dependencies
+      working-directory: ./web
+      run: npm ci
+    
+    - name: Lint Agent Code
+      working-directory: ./agent
+      run: npm run lint
+    
+    - name: Lint Web Code
+      working-directory: ./web
+      run: npm run lint
+    
+    - name: Run Agent Tests
+      working-directory: ./agent
+      run: npm test -- --coverage
+    
+    - name: Type Check Agent
+      working-directory: ./agent
+      run: npm run type-check
+    
+    - name: Type Check Web
+      working-directory: ./web
+      run: npx tsc --noEmit
+    
+    - name: Upload Coverage
+      uses: codecov/codecov-action@v3
+      if: matrix.node-version == '20.x'
+      with:
+        directory: ./agent/coverage
+        flags: agent
+        name: agent-coverage
+
+  build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v2
+    
+    - name: Log in to Docker Hub
+      if: github.event_name == 'release'
+      uses: docker/login-action@v2
+      with:
+        username: ${{ secrets.DOCKER_USERNAME }}
+        password: ${{ secrets.DOCKER_PASSWORD }}
+    
+    - name: Build Agent Image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./agent
+        push: false
+        tags: ai-ubuntu-agent/agent:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Build Web Image
+      uses: docker/build-push-action@v4
+      with:
+        context: ./web
+        push: false
+        tags: ai-ubuntu-agent/web:latest
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+    
+    - name: Test Docker Compose
+      run: |
+        cp env.example .env
+        sed -i 's/OPENROUTER_API_KEY=.*/OPENROUTER_API_KEY=test-key/' .env
+        docker compose config
+        docker compose build
+    
+    - name: Push Images (Release Only)
+      if: github.event_name == 'release'
+      run: |
+        docker tag ai-ubuntu-agent/agent:latest ${{ secrets.DOCKER_USERNAME }}/ai-ubuntu-agent:${{ github.event.release.tag_name }}
+        docker tag ai-ubuntu-agent/web:latest ${{ secrets.DOCKER_USERNAME }}/ai-ubuntu-agent-web:${{ github.event.release.tag_name }}
+        docker push ${{ secrets.DOCKER_USERNAME }}/ai-ubuntu-agent:${{ github.event.release.tag_name }}
+        docker push ${{ secrets.DOCKER_USERNAME }}/ai-ubuntu-agent-web:${{ github.event.release.tag_name }}
+
+  security:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    needs: test
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: 'trivy-results.sarif'
+    
+    - name: Check for critical vulnerabilities
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        exit-code: '1'
+        severity: 'CRITICAL,HIGH'
+
+  integration:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.event_name == 'push' || github.event_name == 'pull_request'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Environment
+      run: |
+        cp env.example .env
+        sed -i 's/OPENROUTER_API_KEY=.*/OPENROUTER_API_KEY=test-key/' .env
+        sed -i 's/ENABLE_AUTH=.*/ENABLE_AUTH=false/' .env
+    
+    - name: Start Services
+      run: |
+        docker compose up -d
+        sleep 30  # Wait for services to start
+    
+    - name: Health Check
+      run: |
+        curl -f http://localhost:9991/health || exit 1
+    
+    - name: API Tests
+      run: |
+        # Test chat endpoint
+        curl -X POST http://localhost:9991/api/chat \
+          -H "Content-Type: application/json" \
+          -d '{"message": "Hello"}' || exit 1
+        
+        # Test tools endpoint
+        curl http://localhost:9991/api/tools || exit 1
+    
+    - name: Collect Logs
+      if: failure()
+      run: docker compose logs
+    
+    - name: Cleanup
+      if: always()
+      run: docker compose down -v
+
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [test, build, security]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Generate Changelog
+      id: changelog
+      uses: TriPSs/conventional-changelog-action@v3
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        skip-version-file: true
+        skip-commit: true
+    
+    - name: Create Release
+      if: ${{ steps.changelog.outputs.skipped == 'false' }}
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.changelog.outputs.tag }}
+        release_name: Release ${{ steps.changelog.outputs.tag }}
+        body: ${{ steps.changelog.outputs.clean_changelog }}
