@@ -1,6 +1,5 @@
 import { Express } from 'express';
 import promClient from 'prom-client';
-import { config } from '../config';
 import { createLogger } from './logger';
 
 const logger = createLogger('metrics');
@@ -153,7 +152,7 @@ export const setupMetrics = (app: Express) => {
   setInterval(updateSystemMetrics, 10000);
   
   // Metrics endpoint
-  app.get('/metrics', async (req, res) => {
+  app.get('/metrics', async (_req, res) => {
     try {
       res.set('Content-Type', register.contentType);
       res.end(await register.metrics());

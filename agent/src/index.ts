@@ -85,7 +85,7 @@ async function initializeServer() {
     }
 
     // Health check endpoint
-    app.get('/health', (req, res) => {
+    app.get('/health', (_req, res) => {
       const health = {
         status: 'healthy',
         version: process.env.npm_package_version || '1.0.0',
@@ -104,7 +104,7 @@ async function initializeServer() {
     });
 
     // Error handling middleware
-    app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+    app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
       logger.error('Express error:', err);
       res.status(err.status || 500).json({
         error: {

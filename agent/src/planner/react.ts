@@ -1,4 +1,4 @@
-import { LLMClient, ToolCall } from '../llm/client';
+import { LLMClient } from '../llm/client';
 import { ToolRegistry, ExecutionContext, ToolResult } from '../tools/registry';
 import { SYSTEM_PROMPTS } from '../llm/prompts';
 import { createLogger } from '../utils/logger';
@@ -104,7 +104,7 @@ export class Planner extends EventEmitter {
         iteration++;
         
         // Check timeout
-        if (Date.now() - startTime > task.timeout * 1000) {
+        if (task.timeout && Date.now() - startTime > task.timeout * 1000) {
           throw new Error('Task execution timeout');
         }
         

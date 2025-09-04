@@ -61,6 +61,7 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
     (req as any).user = user;
     next();
   });
+  return;
 };
 
 // Request validation middleware
@@ -75,6 +76,7 @@ const validateRequest = (schema: z.ZodSchema) => {
     }
     req.body = result.data;
     next();
+    return;
   };
 };
 
@@ -190,15 +192,15 @@ export function setupRoutes(
         task = await taskGenerator.return(undefined as any);
         
         res.json({
-          id: task.id,
-          status: task.status,
+          id: task.value?.id,
+          status: task.value?.status,
           steps,
-          instruction: task.instruction,
+          instruction: task.value?.instruction,
         });
         
         // Continue execution in background
         (async () => {
-          for await (const step of taskGenerator) {
+          for await (const _step of taskGenerator) {
             // Steps will be sent via WebSocket
           }
         })();
@@ -210,8 +212,8 @@ export function setupRoutes(
     }
   );
   
-  app.get('/api/tasks/:taskId', authenticateToken, (req: Request, res: Response) => {
-    const task = planner.getTask(req.params.taskId);
+  app.get('/api/tasks/:taskId', authenticateToken, (_req: Request, res: Response) => {
+    const task = planner.getTask(_req.params.taskId);
     
     if (!task) {
       return res.status(404).json({ error: 'Task not found' });
@@ -220,13 +222,13 @@ export function setupRoutes(
     res.json(task);
   });
   
-  app.get('/api/tasks', authenticateToken, (req: Request, res: Response) => {
+  app.get('/api/tasks', authenticateToken, (_req: Request, res: Response) => {
     const tasks = planner.getAllTasks();
     res.json(tasks);
   });
   
   // Approval endpoints
-  app.get('/api/approvals', authenticateToken, (req: Request, res: Response) => {
+  app.get('/api/approvals', authenticateToken, (_req: Request, res: Response) => {
     const approvals = planner.getApprovalQueue();
     res.json(approvals);
   });
@@ -255,7 +257,7 @@ export function setupRoutes(
   );
   
   // Tool endpoints
-  app.get('/api/tools', authenticateToken, (req: Request, res: Response) => {
+  app.get('/api/tools', authenticateToken, (_req: Request, res: Response) => {
     const tools = toolRegistry.getAllTools().map(tool => ({
       name: tool.name,
       description: tool.description,
@@ -289,7 +291,7 @@ export function setupRoutes(
   );
   
   // Desktop screenshot endpoint
-  app.get('/api/desktop/screenshot', authenticateToken, async (req: Request, res: Response) => {
+  app.get('/api/desktop/screenshot', authenticateToken, async (_req: Request, res: Response) => {
     try {
       const result = await toolRegistry.executeTool(
         'screenshot',
@@ -314,7 +316,7 @@ export function setupRoutes(
   });
   
   // System info endpoint
-  app.get('/api/system/info', authenticateToken, async (req: Request, res: Response) => {
+  app.get('/api/system/info', authenticateToken, async (_req: Request, res: Response) => {
     try {
       const result = await toolRegistry.executeTool(
         'system_info',

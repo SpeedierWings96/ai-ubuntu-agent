@@ -28,13 +28,14 @@ export function setupWebSocket(
   const { llmClient, toolRegistry, planner } = services;
   
   // Authentication middleware
-  io.use((socket: AuthenticatedSocket, next) => {
+  io.use((socket: Socket, next) => {
+    const authSocket = socket as AuthenticatedSocket;
     if (!config.enableAuth) {
-      socket.taskSubscriptions = new Set();
+      authSocket.taskSubscriptions = new Set();
       return next();
     }
     
-    const token = socket.handshake.auth.token;
+    const token = authSocket.handshake.auth.token;
     
     if (!token) {
       return next(new Error('Authentication required'));
@@ -45,20 +46,21 @@ export function setupWebSocket(
         return next(new Error('Invalid token'));
       }
       
-      socket.user = user;
-      socket.taskSubscriptions = new Set();
+      authSocket.user = user;
+      authSocket.taskSubscriptions = new Set();
       next();
     });
   });
   
-  io.on('connection', (socket: AuthenticatedSocket) => {
-    logger.info(`WebSocket client connected: ${socket.id}`);
+  io.on('connection', (socket: Socket) => {
+    const authSocket = socket as AuthenticatedSocket;
+    logger.info(`WebSocket client connected: ${authSocket.id}`);
     metrics.websocketConnectionsActive.inc();
     
     // Send initial connection confirmation
-    socket.emit('connected', {
-      id: socket.id,
-      user: socket.user,
+    authSocket.emit('connected', {
+      id: authSocket.id,
+      user: authSocket.user,
       timestamp: Date.now(),
     });
     
@@ -71,7 +73,7 @@ export function setupWebSocket(
         return;
       }
       
-      socket.taskSubscriptions.add(taskId);
+      authSocket.taskSubscriptions.add(taskId);
       socket.join(`task:${taskId}`);
       
       // Send current task state
@@ -81,7 +83,7 @@ export function setupWebSocket(
     });
     
     socket.on('task:unsubscribe', (taskId: string) => {
-      socket.taskSubscriptions.delete(taskId);
+      authSocket.taskSubscriptions.delete(taskId);
       socket.leave(`task:${taskId}`);
       logger.debug(`Client ${socket.id} unsubscribed from task ${taskId}`);
     });
@@ -95,7 +97,7 @@ export function setupWebSocket(
         // Process task steps
         for await (const step of taskGenerator) {
           // Send step update to subscribed clients
-          io.to(`task:${step.taskId || ''}`).emit('task:step', step);
+          io.to(`task:${'taskId' in step ? step.taskId : ''}`).emit('task:step', step);
           
           // Also send to the requesting client
           socket.emit('task:step', step);
@@ -274,7 +276,7 @@ export function setupWebSocket(
       metrics.websocketConnectionsActive.dec();
       
       // Clean up subscriptions
-      socket.taskSubscriptions.clear();
+      authSocket.taskSubscriptions.clear();
     });
     
     // Handle errors

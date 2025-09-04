@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Read(//c/Users/camsh/Desktop/Test/ai-ubuntu-agent/web/src/styles/**)"
+      "Read(//c/Users/camsh/Desktop/Test/ai-ubuntu-agent/web/src/styles/**)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git push:*)"
     ],
     "deny": [],
     "ask": []
