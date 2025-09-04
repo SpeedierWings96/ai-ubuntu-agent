@@ -82,6 +82,7 @@ function Test-Docker {
             }
         }
     }
+    }
     catch {
         Write-Error "Docker Desktop is not installed or not accessible"
         Write-Info ""
@@ -147,7 +148,7 @@ function New-EnvFile {
         if (-not $vncPass) { $vncPass = "changeme" }
         
         $content = Get-Content .env -Raw
-        $content = $content -replace 'DESKTOP_VNC_PASSWORD=.*', "DESKTOP_VNC_PASSWORD=$vncPass"
+        $content = $content -replace "DESKTOP_VNC_PASSWORD=.*", "DESKTOP_VNC_PASSWORD=$vncPass"
         Set-Content .env $content -NoNewline
     }
     

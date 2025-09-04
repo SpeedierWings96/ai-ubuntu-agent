@@ -81,7 +81,7 @@ Docker Desktop automatically installs and configures WSL2 for you.
 Open PowerShell or Windows Terminal and run:
 
 ```powershell
-git clone https://github.com/yourusername/ai-ubuntu-agent.git
+git clone https://github.com/SpeedierWings96/ai-ubuntu-agent.git
 cd ai-ubuntu-agent
 ```
 
