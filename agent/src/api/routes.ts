@@ -1,7 +1,7 @@
 import { Express, Request, Response, NextFunction } from 'express';
 import { LLMClient } from '../llm/client';
 import { ToolRegistry } from '../tools/registry';
-import { Planner } from '../planner/react';
+import { Planner, Task } from '../planner/react';
 import { createLogger } from '../utils/logger';
 import { httpMetricsMiddleware } from '../utils/metrics';
 import rateLimit from 'express-rate-limit';
@@ -189,7 +189,7 @@ export function setupRoutes(
         
         // Get the task
         const taskResult = await taskGenerator.return(undefined as any);
-        task = taskResult.value;
+        task = taskResult.value as Task;
         
         res.json({
           id: task?.id,
