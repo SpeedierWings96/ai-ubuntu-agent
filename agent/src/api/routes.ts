@@ -59,9 +59,8 @@ const authenticateToken = (req: Request, res: Response, next: NextFunction) => {
       return res.status(403).json({ error: 'Invalid or expired token' });
     }
     (req as any).user = user;
-    next();
+    return next();
   });
-  return;
 };
 
 // Request validation middleware
@@ -189,13 +188,14 @@ export function setupRoutes(
         }
         
         // Get the task
-        task = await taskGenerator.return(undefined as any);
+        const taskResult = await taskGenerator.return(undefined as any);
+        task = taskResult.value;
         
         res.json({
-          id: task.value?.id,
-          status: task.value?.status,
+          id: task?.id,
+          status: task?.status,
           steps,
-          instruction: task.value?.instruction,
+          instruction: task?.instruction,
         });
         
         // Continue execution in background
@@ -219,7 +219,7 @@ export function setupRoutes(
       return res.status(404).json({ error: 'Task not found' });
     }
     
-    res.json(task);
+    return res.json(task);
   });
   
   app.get('/api/tasks', authenticateToken, (_req: Request, res: Response) => {
