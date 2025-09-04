@@ -82,7 +82,6 @@ function Test-Docker {
             }
         }
     }
-    }
     catch {
         Write-Error "Docker Desktop is not installed or not accessible"
         Write-Info ""
@@ -144,7 +143,7 @@ function New-EnvFile {
         }
         
         Write-Host ""
-        $vncPass = Read-Host "Enter VNC Password (press Enter for default 'changeme')"
+        $vncPass = Read-Host "Enter VNC Password (press Enter for default changeme)"
         if (-not $vncPass) { $vncPass = "changeme" }
         
         $content = Get-Content .env -Raw
