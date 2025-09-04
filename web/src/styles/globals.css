@@ -43,7 +43,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    /* default border color is set via CSS variables; custom class removed */
   }
 
   body {
