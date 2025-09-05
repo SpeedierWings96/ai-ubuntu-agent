@@ -230,11 +230,37 @@ export class DesktopTools {
     }
   }
 
-  // Desktop interaction (requires xdotool in the desktop container)
+  // Desktop interaction (uses import or xwd as fallback)
   async screenshot(): Promise<{ success: boolean; image?: string; error?: string }> {
     try {
       const screenshotPath = '/tmp/screenshot.png';
-      await execAsync(`DISPLAY=:0 scrot ${screenshotPath}`);
+      
+      // Try different screenshot methods
+      const methods = [
+        `DISPLAY=:0 import -window root ${screenshotPath}`,  // ImageMagick
+        `DISPLAY=:0 xwd -root -silent | convert xwd:- ${screenshotPath}`,  // xwd + convert
+        `DISPLAY=:0 gnome-screenshot -f ${screenshotPath}`,  // GNOME
+        `DISPLAY=:0 scrot ${screenshotPath}`,  // scrot as fallback
+      ];
+      
+      let success = false;
+      let lastError = '';
+      
+      for (const method of methods) {
+        try {
+          await execAsync(method);
+          success = true;
+          break;
+        } catch (err: any) {
+          lastError = err.message;
+          continue;
+        }
+      }
+      
+      if (!success) {
+        throw new Error(`All screenshot methods failed. Last error: ${lastError}`);
+      }
+      
       const imageBuffer = await fs.readFile(screenshotPath);
       const base64Image = imageBuffer.toString('base64');
       await fs.unlink(screenshotPath).catch(() => {}); // Clean up
