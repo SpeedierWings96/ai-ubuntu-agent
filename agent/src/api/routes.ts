@@ -1,4 +1,4 @@
-import { Express, Request, Response, NextFunction } from 'express';
+import express, { Express, Request, Response, NextFunction } from 'express';
 import { LLMClient } from '../llm/client';
 import { ToolRegistry } from '../tools/registry';
 import { Planner, Task } from '../planner/react';
