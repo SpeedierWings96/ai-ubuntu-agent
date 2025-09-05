@@ -41,7 +41,8 @@ services:
       - OPENROUTER_MAX_TOKENS=${OPENROUTER_MAX_TOKENS:-4096}
       - OPENROUTER_TEMPERATURE=${OPENROUTER_TEMPERATURE:-0.7}
       - OPENROUTER_FALLBACK_MODELS=${OPENROUTER_FALLBACK_MODELS:-openai/gpt-4o,anthropic/claude-3-haiku}
-      - DESKTOP_HOST=desktop
+      - DESKTOP_HOST=desktop-api
+      - DESKTOP_API_PORT=8090
       - DESKTOP_VNC_PORT=5900
       - DESKTOP_HTTP_PORT=6080
       - DOCKER_CONTAINER=true
@@ -67,6 +68,8 @@ services:
     depends_on:
       desktop:
         condition: service_healthy
+      desktop-api:
+        condition: service_started
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9991/health"]
@@ -95,6 +98,24 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+    networks:
+      - ai-agent-network
+
+  desktop-api:
+    image: node:20-alpine
+    container_name: ai-desktop-api
+    working_dir: /app
+    environment:
+      - DESKTOP_CONTAINER=ai-desktop
+      - COMMAND_PORT=8090
+      - DESKTOP_DISPLAY=:1
+    volumes:
+      - ./:/app:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    command: ["node", "desktop-command-server.js"]
+    restart: unless-stopped
+    depends_on:
+      - desktop
     networks:
       - ai-agent-network
 

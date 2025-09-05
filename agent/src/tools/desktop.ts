@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createLogger } from '../utils/logger';
+import { desktopAPI } from './desktop-api';
 
 const execAsync = promisify(exec);
 const logger = createLogger('desktop-tools');
@@ -18,15 +19,21 @@ export class DesktopTools {
       // Check if we're running in Docker
       const inDocker = process.env.DOCKER_CONTAINER === 'true';
       
+      // Prefer desktop HTTP API if available
+      try {
+        const apiResult = await desktopAPI.executeCommand(command);
+        if (apiResult.success) {
+          return { stdout: apiResult.output || '', stderr: '' };
+        }
+      } catch {}
+
       if (inDocker) {
-        // Execute command in desktop container using docker exec
         const dockerCommand = `docker exec ai-desktop bash -c "${command.replace(/"/g, '\\"')}"`;
         logger.debug(`Executing via docker: ${dockerCommand}`);
         return execAsync(dockerCommand, { timeout: 30000, maxBuffer: 10 * 1024 * 1024 });
-      } else {
-        // Local development - execute directly
-        return execAsync(command, { timeout: 30000, maxBuffer: 10 * 1024 * 1024 });
       }
+
+      return execAsync(command, { timeout: 30000, maxBuffer: 10 * 1024 * 1024 });
     } catch (error: any) {
       logger.error(`Failed to execute in desktop: ${error.message}`);
       throw error;
