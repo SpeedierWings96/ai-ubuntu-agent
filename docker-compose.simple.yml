@@ -24,6 +24,7 @@ services:
     environment:
       - NODE_ENV=production
       - LOG_LEVEL=info
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
     volumes:
       - ./agent-data:/data
     ports:

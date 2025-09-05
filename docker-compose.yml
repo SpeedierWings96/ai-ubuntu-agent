@@ -33,7 +33,7 @@ services:
     container_name: ai-agent
     environment:
       - NODE_ENV=production
-      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY}
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - OPENROUTER_MODEL=${OPENROUTER_MODEL:-anthropic/claude-3.5-sonnet}
       - OPENROUTER_MAX_TOKENS=${OPENROUTER_MAX_TOKENS:-4096}
       - OPENROUTER_TEMPERATURE=${OPENROUTER_TEMPERATURE:-0.7}

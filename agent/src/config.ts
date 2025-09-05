@@ -11,7 +11,7 @@ const configSchema = z.object({
   nodeEnv: z.enum(['development', 'production', 'test']).default('production'),
   
   // OpenRouter configuration
-  openRouterApiKey: z.string().min(1),
+  openRouterApiKey: z.string().min(1).optional(),
   openRouterModel: z.string().default('anthropic/claude-3.5-sonnet'),
   openRouterMaxTokens: z.number().int().positive().default(4096),
   openRouterTemperature: z.number().min(0).max(2).default(0.7),

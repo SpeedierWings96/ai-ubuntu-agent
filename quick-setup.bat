@@ -24,6 +24,8 @@ REM Create .env file with defaults
     echo CUSTOM_USER=admin
     echo PASSWORD=admin123
     echo DESKTOP_VNC_PASSWORD=admin123
+    echo # Add your OpenRouter API key below if you want AI features:
+    echo # OPENROUTER_API_KEY=your-api-key-here
 ) > .env
 
 REM Stop existing containers
