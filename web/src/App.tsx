@@ -6,6 +6,7 @@ import DesktopViewer from './components/Desktop/Viewer';
 import TaskList from './components/Tasks/TaskList';
 import ApprovalPanel from './components/ApprovalPanel';
 import Header from './components/Header';
+import { SettingsPanel } from './components/Settings';
 import { connectWebSocket } from './lib/websocket';
 
 function App() {
@@ -72,6 +73,9 @@ function App() {
           <TaskList />
         </div>
       </div>
+
+      {/* Settings Button */}
+      <SettingsPanel />
     </div>
   );
 }

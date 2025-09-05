@@ -315,6 +315,37 @@ export function setupRoutes(
     }
   });
   
+  // Configuration endpoints
+  app.get('/api/config', (_req: Request, res: Response) => {
+    res.json({
+      hasApiKey: !!config.openRouterApiKey,
+      model: config.openRouterModel,
+      maxTokens: config.openRouterMaxTokens,
+      temperature: config.openRouterTemperature,
+      authEnabled: config.enableAuth,
+    });
+  });
+
+  app.post('/api/config', express.json(), (req: Request, res: Response) => {
+    const { openRouterApiKey, model, maxTokens, temperature } = req.body;
+    
+    // Update config in memory (Note: This won't persist across restarts)
+    if (openRouterApiKey !== undefined) {
+      (config as any).openRouterApiKey = openRouterApiKey;
+    }
+    if (model !== undefined) {
+      (config as any).openRouterModel = model;
+    }
+    if (maxTokens !== undefined) {
+      (config as any).openRouterMaxTokens = maxTokens;
+    }
+    if (temperature !== undefined) {
+      (config as any).openRouterTemperature = temperature;
+    }
+    
+    res.json({ success: true, message: 'Configuration updated' });
+  });
+
   // System info endpoint
   app.get('/api/system/info', authenticateToken, async (_req: Request, res: Response) => {
     try {

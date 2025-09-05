@@ -24,7 +24,7 @@ const configSchema = z.object({
   desktopPassword: z.string().default('changeme'),
   
   // Server configuration
-  agentPort: z.number().int().default(9991),
+  agentPort: z.number().int().default(3000),
   metricsPort: z.number().int().default(9090),
   
   // Security configuration
