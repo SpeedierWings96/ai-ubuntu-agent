@@ -186,15 +186,36 @@ export class LLMClient {
     if (message.tool_calls) {
       response.toolCalls = message.tool_calls.map((tc: any) => {
         try {
+          let args = {};
+          if (tc.function.arguments) {
+            // Clean up the arguments string before parsing
+            const cleanedArgs = tc.function.arguments.trim();
+            if (cleanedArgs) {
+              args = typeof cleanedArgs === 'string' 
+                ? JSON.parse(cleanedArgs) 
+                : cleanedArgs;
+            }
+          }
           return {
             id: tc.id,
             name: tc.function.name,
-            arguments: typeof tc.function.arguments === 'string' 
-              ? JSON.parse(tc.function.arguments) 
-              : tc.function.arguments,
+            arguments: args,
           };
         } catch (error) {
-          logger.error(`Failed to parse tool call arguments: ${tc.function.arguments}`, error);
+          logger.error(`Failed to parse tool call arguments for ${tc.function.name}:`, tc.function.arguments, error);
+          // Try to extract partial JSON if possible
+          try {
+            const partialArgs = tc.function.arguments.match(/{[^}]*}/)?.[0];
+            if (partialArgs) {
+              return {
+                id: tc.id,
+                name: tc.function.name,
+                arguments: JSON.parse(partialArgs),
+              };
+            }
+          } catch (e) {
+            // Fallback to empty arguments
+          }
           return {
             id: tc.id,
             name: tc.function.name,
@@ -248,12 +269,32 @@ export class LLMClient {
     // Parse tool call arguments
     const parsedToolCalls = toolCalls.map(tc => {
       try {
+        let args = {};
+        if (tc.arguments) {
+          // Clean up accumulated arguments
+          const cleanedArgs = tc.arguments.trim();
+          if (cleanedArgs) {
+            args = JSON.parse(cleanedArgs);
+          }
+        }
         return {
           ...tc,
-          arguments: tc.arguments ? JSON.parse(tc.arguments) : {},
+          arguments: args,
         };
       } catch (error) {
-        logger.error(`Failed to parse streaming tool call arguments: ${tc.arguments}`, error);
+        logger.error(`Failed to parse streaming tool call arguments for ${tc.name}:`, tc.arguments, error);
+        // Try to extract partial JSON if possible
+        try {
+          const partialArgs = tc.arguments.match(/{[^}]*}/)?.[0];
+          if (partialArgs) {
+            return {
+              ...tc,
+              arguments: JSON.parse(partialArgs),
+            };
+          }
+        } catch (e) {
+          // Fallback to empty arguments
+        }
         return {
           ...tc,
           arguments: {},

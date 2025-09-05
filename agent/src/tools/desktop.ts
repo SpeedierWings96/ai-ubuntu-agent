@@ -218,10 +218,10 @@ export class DesktopTools {
       
       // Try different screenshot methods
       const methods = [
-        `DISPLAY=:0 import -window root ${screenshotPath}`,  // ImageMagick
-        `DISPLAY=:0 xwd -root -silent | convert xwd:- ${screenshotPath}`,  // xwd + convert
-        `DISPLAY=:0 gnome-screenshot -f ${screenshotPath}`,  // GNOME
-        `DISPLAY=:0 scrot ${screenshotPath}`,  // scrot as fallback
+        `DISPLAY=:1 import -window root ${screenshotPath}`,  // ImageMagick
+        `DISPLAY=:1 xwd -root -silent | convert xwd:- ${screenshotPath}`,  // xwd + convert
+        `DISPLAY=:1 gnome-screenshot -f ${screenshotPath}`,  // GNOME
+        `DISPLAY=:1 scrot ${screenshotPath}`,  // scrot as fallback
       ];
       
       let success = false;
@@ -260,7 +260,7 @@ export class DesktopTools {
   async click(x: number, y: number, button: 'left' | 'right' | 'middle' = 'left'): Promise<{ success: boolean; error?: string }> {
     try {
       const buttonMap = { left: 1, middle: 2, right: 3 };
-      await this.execInDesktop(`DISPLAY=:0 xdotool mousemove ${x} ${y} click ${buttonMap[button]}`);
+      await this.execInDesktop(`DISPLAY=:1 xdotool mousemove ${x} ${y} click ${buttonMap[button]}`);
       return { success: true };
     } catch (error: any) {
       logger.error(`Failed to click: ${error.message}`);
@@ -272,7 +272,7 @@ export class DesktopTools {
     try {
       // Escape special characters for xdotool
       const escapedText = text.replace(/'/g, "'\\''");
-      await this.execInDesktop(`DISPLAY=:0 xdotool type '${escapedText}'`);
+      await this.execInDesktop(`DISPLAY=:1 xdotool type '${escapedText}'`);
       return { success: true };
     } catch (error: any) {
       logger.error(`Failed to type: ${error.message}`);
@@ -282,7 +282,7 @@ export class DesktopTools {
 
   async key(key: string): Promise<{ success: boolean; error?: string }> {
     try {
-      await this.execInDesktop(`DISPLAY=:0 xdotool key ${key}`);
+      await this.execInDesktop(`DISPLAY=:1 xdotool key ${key}`);
       return { success: true };
     } catch (error: any) {
       logger.error(`Failed to press key: ${error.message}`);
@@ -294,9 +294,9 @@ export class DesktopTools {
     try {
       // Try common application launchers
       const launchers = [
-        `DISPLAY=:0 ${appName}`,
-        `DISPLAY=:0 xdg-open ${appName}`,
-        `DISPLAY=:0 gtk-launch ${appName}`,
+        `DISPLAY=:1 ${appName}`,
+        `DISPLAY=:1 xdg-open ${appName}`,
+        `DISPLAY=:1 gtk-launch ${appName}`,
       ];
       
       for (const launcher of launchers) {

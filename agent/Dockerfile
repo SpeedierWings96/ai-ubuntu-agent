@@ -24,9 +24,11 @@ WORKDIR /app
 # Install dumb-init for proper signal handling and docker-cli for desktop control
 RUN apk add --no-cache dumb-init docker-cli
 
-# Create non-root user
+# Create non-root user and add to docker group
 RUN addgroup -g 1001 nodejs && \
-    adduser -S -u 1001 -G nodejs nodejs
+    adduser -S -u 1001 -G nodejs nodejs && \
+    addgroup -S docker && \
+    adduser nodejs docker
 
 # Copy package files
 COPY package*.json ./
@@ -41,8 +43,8 @@ COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
 # Create data directory
 RUN mkdir -p /data && chown nodejs:nodejs /data
 
-# Switch to non-root user
-USER nodejs
+# Note: User is set in docker-compose.yml to allow flexibility
+# USER nodejs (removed to allow running as root when needed)
 
 # Expose ports
 EXPOSE 9991 9090

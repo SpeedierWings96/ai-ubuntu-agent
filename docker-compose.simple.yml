@@ -25,7 +25,7 @@ services:
     container_name: ai-agent
     environment:
       - NODE_ENV=production
-      - LOG_LEVEL=info
+      - LOG_LEVEL=debug
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
       - DESKTOP_HOST=desktop
       - DOCKER_CONTAINER=true

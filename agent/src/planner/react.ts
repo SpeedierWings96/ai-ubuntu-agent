@@ -375,9 +375,32 @@ export class Planner extends EventEmitter {
     // Check if the last step indicates completion
     const lastStep = task.steps[task.steps.length - 1];
     
-    if (lastStep?.thought?.toLowerCase().includes('task complete') ||
-        lastStep?.thought?.toLowerCase().includes('successfully completed')) {
+    // More flexible completion detection
+    const completionKeywords = [
+      'task complete',
+      'successfully completed',
+      'done',
+      'finished',
+      'completed the task',
+      'task has been completed',
+      'successfully',
+      'terminal is open',
+      'terminal opened',
+      'opened the terminal'
+    ];
+    
+    const thought = lastStep?.thought?.toLowerCase() || '';
+    const hasCompletionKeyword = completionKeywords.some(keyword => thought.includes(keyword));
+    
+    if (hasCompletionKeyword) {
       return true;
+    }
+    
+    // Also check if the action was successful and matches the task
+    if (lastStep?.result?.success && task.instruction.toLowerCase().includes('terminal')) {
+      if (lastStep.action === 'openApplication' || lastStep.action === 'exec') {
+        return true;
+      }
     }
     
     // Check if there were multiple consecutive errors
