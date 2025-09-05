@@ -105,7 +105,7 @@ export default function Header({ connected }: HeaderProps) {
                 </label>
                 <input
                   type="text"
-                  value={import.meta.env.VITE_AGENT_URL || 'http://localhost:9991'}
+                  value={import.meta.env.VITE_AGENT_URL || 'http://localhost:3002'}
                   className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-900 dark:text-white"
                   readOnly
                 />

@@ -12,7 +12,7 @@ export function connectWebSocket(
   const { token } = store;
   
   // Connect to WebSocket server
-  socket = io(import.meta.env.VITE_WS_URL || 'ws://localhost:9991', {
+  socket = io(import.meta.env.VITE_WS_URL || 'ws://localhost:3002', {
     auth: token ? { token } : undefined,
     transports: ['websocket', 'polling'],
   });
