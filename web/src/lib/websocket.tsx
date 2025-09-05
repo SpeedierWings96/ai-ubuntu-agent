@@ -55,6 +55,25 @@ export function connectWebSocket(
       store.updateTask(task.id, {
         steps: [...(task.steps || []), step],
       });
+      
+      // Add step as a message in chat
+      if (step && step.thought) {
+        store.addMessage({
+          id: `step_${Date.now()}`,
+          role: 'assistant',
+          content: `💭 ${step.thought}`,
+          timestamp: Date.now(),
+        });
+      }
+      
+      if (step && step.observation) {
+        store.addMessage({
+          id: `obs_${Date.now()}`,
+          role: 'assistant',
+          content: `📋 Result: ${step.observation}`,
+          timestamp: Date.now(),
+        });
+      }
     }
   });
   
@@ -65,6 +84,15 @@ export function connectWebSocket(
         completedAt: task.completedAt,
         result: task.result,
       });
+      
+      // Add completion message to chat
+      store.addMessage({
+        id: `complete_${Date.now()}`,
+        role: 'assistant',
+        content: `✅ Task completed successfully!`,
+        timestamp: Date.now(),
+      });
+      
       if (task.instruction) {
         toast.success(`Task completed: ${task.instruction.substring(0, 50)}...`);
       }
@@ -78,6 +106,15 @@ export function connectWebSocket(
         completedAt: task.completedAt,
         error: task.error,
       });
+      
+      // Add failure message to chat
+      store.addMessage({
+        id: `fail_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ Task failed: ${task.error || 'Unknown error'}`,
+        timestamp: Date.now(),
+      });
+      
       toast.error(`Task failed: ${task.error || 'Unknown error'}`);
     }
   });
@@ -178,13 +215,20 @@ export function connectWebSocket(
 }
 
 // WebSocket API functions
-export function sendMessage(message: string, context?: string[], tools?: string[]) {
+export function sendMessage(message: string, context?: string[]) {
   if (!socket?.connected) {
     toast.error('Not connected to server');
     return;
   }
   
-  socket.emit('chat:message', { message, context, tools });
+  // Instead of sending a chat message, create a task
+  // This makes the chat interface directly execute actions
+  socket.emit('task:start', { 
+    instruction: message, 
+    context: context || {}, 
+    constraints: [], 
+    timeout: 300 
+  });
 }
 
 export function startTask(instruction: string, context?: any, constraints?: string[], timeout?: number) {

@@ -3,7 +3,6 @@ import { Toaster } from 'react-hot-toast';
 import { useStore } from './lib/store';
 import Chat from './components/Chat/Chat';
 import DesktopViewer from './components/Desktop/Viewer';
-import TaskList from './components/Tasks/TaskList';
 import ApprovalPanel from './components/ApprovalPanel';
 import Header from './components/Header';
 import { SettingsPanel } from './components/Settings';
@@ -58,7 +57,7 @@ function App() {
           <Chat />
         </div>
 
-        {/* Center - Desktop Viewer */}
+        {/* Main Content - Desktop Viewer */}
         <div className="flex-1 flex flex-col">
           <div className="flex-1 p-4">
             <DesktopViewer />
@@ -66,11 +65,6 @@ function App() {
 
           {/* Approval Panel */}
           <ApprovalPanel />
-        </div>
-
-        {/* Right Sidebar - Tasks */}
-        <div className="w-80 border-l border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
-          <TaskList />
         </div>
       </div>
 
