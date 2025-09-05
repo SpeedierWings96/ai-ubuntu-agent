@@ -39,35 +39,47 @@ export function connectWebSocket(
   
   // Task events
   socket.on('task:created', (task) => {
-    store.addTask(task);
+    if (task) {
+      store.addTask(task);
+    }
   });
   
   socket.on('task:started', (task) => {
-    store.updateTask(task.id, { status: 'running' });
+    if (task && task.id) {
+      store.updateTask(task.id, { status: 'running' });
+    }
   });
   
   socket.on('task:step', ({ task, step }) => {
-    store.updateTask(task.id, {
-      steps: [...(task.steps || []), step],
-    });
+    if (task && task.id) {
+      store.updateTask(task.id, {
+        steps: [...(task.steps || []), step],
+      });
+    }
   });
   
   socket.on('task:completed', (task) => {
-    store.updateTask(task.id, {
-      status: 'completed',
-      completedAt: task.completedAt,
-      result: task.result,
-    });
-    toast.success(`Task completed: ${task.instruction.substring(0, 50)}...`);
+    if (task && task.id) {
+      store.updateTask(task.id, {
+        status: 'completed',
+        completedAt: task.completedAt,
+        result: task.result,
+      });
+      if (task.instruction) {
+        toast.success(`Task completed: ${task.instruction.substring(0, 50)}...`);
+      }
+    }
   });
   
   socket.on('task:failed', (task) => {
-    store.updateTask(task.id, {
-      status: 'failed',
-      completedAt: task.completedAt,
-      error: task.error,
-    });
-    toast.error(`Task failed: ${task.error}`);
+    if (task && task.id) {
+      store.updateTask(task.id, {
+        status: 'failed',
+        completedAt: task.completedAt,
+        error: task.error,
+      });
+      toast.error(`Task failed: ${task.error || 'Unknown error'}`);
+    }
   });
   
   // Approval events

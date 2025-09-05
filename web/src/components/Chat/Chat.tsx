@@ -1,8 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { useStore } from '../../lib/store';
-import { sendMessage } from '../../lib/websocket';
+import { sendMessage, startTask } from '../../lib/websocket';
 import MessageList from './MessageList';
-import { PaperAirplaneIcon, TrashIcon } from '@heroicons/react/24/outline';
+import { PaperAirplaneIcon, TrashIcon, CameraIcon, CommandLineIcon, CpuChipIcon, FolderOpenIcon } from '@heroicons/react/24/outline';
 
 export default function Chat() {
   const [input, setInput] = useState('');
@@ -51,6 +51,42 @@ export default function Chat() {
           title="Clear chat"
         >
           <TrashIcon className="w-4 h-4 text-gray-500" />
+        </button>
+      </div>
+
+      {/* Quick Actions */}
+      <div className="px-4 py-2 border-b border-gray-200 dark:border-gray-700 flex items-center space-x-2">
+        <button
+          onClick={() => startTask('Take a screenshot of the desktop')}
+          className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+          title="Take Screenshot"
+        >
+          <CameraIcon className="w-4 h-4" />
+          <span>Screenshot</span>
+        </button>
+        <button
+          onClick={() => startTask('Open a terminal window')}
+          className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+          title="Open Terminal"
+        >
+          <CommandLineIcon className="w-4 h-4" />
+          <span>Open Terminal</span>
+        </button>
+        <button
+          onClick={() => startTask('Get system information including CPU, memory, and disk usage')}
+          className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+          title="System Info"
+        >
+          <CpuChipIcon className="w-4 h-4" />
+          <span>System Info</span>
+        </button>
+        <button
+          onClick={() => startTask('List all running processes')}
+          className="flex items-center space-x-1 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors text-sm"
+          title="List Processes"
+        >
+          <FolderOpenIcon className="w-4 h-4" />
+          <span>List Processes</span>
         </button>
       </div>
 
