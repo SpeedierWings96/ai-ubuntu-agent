@@ -3,19 +3,13 @@ import { promisify } from 'util';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { createLogger } from '../utils/logger';
-import axios from 'axios';
 
 const execAsync = promisify(exec);
 const logger = createLogger('desktop-tools');
 
 export class DesktopTools {
-  private desktopHost: string;
-  private desktopPort: number;
-
   constructor() {
-    // In Docker network, the desktop container is accessible by its service name
-    this.desktopHost = process.env.DESKTOP_HOST || 'desktop';
-    this.desktopPort = parseInt(process.env.DESKTOP_PORT || '8082');
+    // Configuration handled via environment variables
   }
 
   // Helper to execute commands in the desktop container
@@ -169,7 +163,7 @@ export class DesktopTools {
           command: parts.slice(10).join(' '),
         };
       });
-      return { success: true, processes }
+      return { success: true, processes };
     } catch (error: any) {
       logger.error(`Failed to list processes: ${error.message}`);
       return { success: false, error: error.message };
@@ -248,9 +242,10 @@ export class DesktopTools {
         throw new Error(`All screenshot methods failed. Last error: ${lastError}`);
       }
       
-      const imageBuffer = await fs.readFile(screenshotPath);
-      const base64Image = imageBuffer.toString('base64');
-      await fs.unlink(screenshotPath).catch(() => {}); // Clean up
+      // Read the screenshot from desktop container's filesystem
+      const { stdout: imageData } = await this.execInDesktop(`cat ${screenshotPath} | base64`);
+      const base64Image = imageData.trim();
+      await this.execInDesktop(`rm -f ${screenshotPath}`).catch(() => {}); // Clean up
       
       return {
         success: true,
