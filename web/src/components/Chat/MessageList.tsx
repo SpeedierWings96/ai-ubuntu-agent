@@ -77,7 +77,7 @@ export default function MessageList({ messages, isTyping }: MessageListProps) {
               
               {/* Timestamp */}
               <p className="text-xs opacity-70 mt-1">
-                {format(message.timestamp, 'HH:mm:ss')}
+                {message.timestamp ? format(new Date(message.timestamp), 'HH:mm:ss') : 'now'}
               </p>
             </div>
           </div>
