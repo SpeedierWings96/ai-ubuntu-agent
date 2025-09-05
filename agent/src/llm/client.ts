@@ -35,11 +35,12 @@ export class LLMClient {
     this.config = config;
     
     // Initialize OpenAI client with OpenRouter configuration
+    // Use a placeholder if no API key is provided
     this.client = new OpenAI({
-      apiKey: config.openRouterApiKey,
+      apiKey: config.openRouterApiKey || 'sk-placeholder',
       baseURL: 'https://openrouter.ai/api/v1',
       defaultHeaders: {
-        'HTTP-Referer': 'http://localhost:9992',
+        'HTTP-Referer': 'http://localhost:3002',
         'X-Title': 'AI Ubuntu Desktop Agent',
       },
     });
@@ -53,7 +54,12 @@ export class LLMClient {
     // Initialize cache with 5 minute TTL
     this.cache = new NodeCache({ stdTTL: 300, checkperiod: 60 });
     
-    this.testConnection();
+    if (config.openRouterApiKey) {
+      this.testConnection();
+    } else {
+      logger.warn('No OpenRouter API key configured - LLM features will be limited');
+      this.isConnected = false;
+    }
   }
   
   private async testConnection() {
@@ -77,6 +83,15 @@ export class LLMClient {
     tools?: ChatCompletionTool[],
     stream: boolean = false
   ): Promise<LLMResponse> {
+    // Check if API key is configured
+    if (!this.config.openRouterApiKey) {
+      logger.warn('No API key configured, returning placeholder response');
+      return {
+        content: 'I need an OpenRouter API key to be configured to process this request. Please set the API key in the Settings panel.',
+        toolCalls: undefined,
+      };
+    }
+    
     const startTime = Date.now();
     const cacheKey = this.getCacheKey(messages, tools);
     

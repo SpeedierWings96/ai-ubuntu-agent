@@ -1,6 +1,7 @@
 import { createLogger } from '../utils/logger';
 import { recordToolMetric } from '../utils/metrics';
 import { z } from 'zod';
+import { desktopTools } from './desktop';
 
 const logger = createLogger('tool-registry');
 
@@ -222,10 +223,7 @@ export class ToolRegistry {
   }
   
   private registerBuiltinTools() {
-    // Import and register all built-in tools
-    // We'll implement these tools in separate files
-    
-    // For now, let's register a few basic tools
+    // Register desktop control tools
     this.registerTool({
       name: 'screenshot',
       description: 'Capture a screenshot of the desktop',
@@ -233,15 +231,11 @@ export class ToolRegistry {
       requiresApproval: false,
       riskLevel: 'low',
       execute: async () => {
-        // TODO: Implement actual screenshot capture via VNC
+        const result = await desktopTools.screenshot();
         return {
-          success: true,
-          data: {
-            image: 'base64_encoded_image_here',
-            width: 1920,
-            height: 1080,
-            timestamp: new Date().toISOString(),
-          },
+          success: result.success,
+          data: result.image ? { image: result.image, timestamp: new Date().toISOString() } : undefined,
+          error: result.error,
         };
       },
     });
@@ -253,16 +247,15 @@ export class ToolRegistry {
         x: z.number().int().min(0),
         y: z.number().int().min(0),
         button: z.enum(['left', 'right', 'middle']).default('left'),
-        double: z.boolean().default(false),
       }),
       requiresApproval: false,
       riskLevel: 'medium',
       execute: async (params) => {
-        // TODO: Implement actual mouse click via VNC
-        logger.debug(`Clicking at (${params.x}, ${params.y}) with ${params.button} button`);
+        const result = await desktopTools.click(params.x, params.y, params.button);
         return {
-          success: true,
-          data: { clicked: true, ...params },
+          success: result.success,
+          data: result.success ? { clicked: true, ...params } : undefined,
+          error: result.error,
         };
       },
     });
@@ -272,16 +265,15 @@ export class ToolRegistry {
       description: 'Type text using the keyboard',
       parameters: z.object({
         text: z.string(),
-        delay: z.number().int().min(0).default(50),
       }),
       requiresApproval: false,
       riskLevel: 'medium',
       execute: async (params) => {
-        // TODO: Implement actual typing via VNC
-        logger.debug(`Typing: "${params.text}"`);
+        const result = await desktopTools.type(params.text);
         return {
-          success: true,
-          data: { typed: params.text },
+          success: result.success,
+          data: result.success ? { typed: params.text } : undefined,
+          error: result.error,
         };
       },
     });
@@ -291,32 +283,15 @@ export class ToolRegistry {
       description: 'Execute a shell command',
       parameters: z.object({
         command: z.string(),
-        cwd: z.string().optional(),
-        timeout: z.number().int().positive().default(30),
-        env: z.record(z.string()).optional(),
       }),
-      requiresApproval: true,
+      requiresApproval: false,
       riskLevel: 'high',
-      validate: (params) => {
-        // Check for dangerous commands
-        const dangerous = ['rm -rf /', 'sudo rm', 'format', 'dd if='];
-        const isDangerous = dangerous.some(cmd => params.command.includes(cmd));
-        
-        return {
-          valid: !isDangerous,
-          errors: isDangerous ? ['Potentially dangerous command detected'] : undefined,
-        };
-      },
       execute: async (params) => {
-        // TODO: Implement actual command execution
-        logger.debug(`Executing command: ${params.command}`);
+        const result = await desktopTools.executeCommand(params.command);
         return {
-          success: true,
-          data: {
-            stdout: 'Command output here',
-            stderr: '',
-            exitCode: 0,
-          },
+          success: result.success,
+          data: result.success ? { output: result.output } : undefined,
+          error: result.error,
         };
       },
     });
@@ -334,6 +309,182 @@ export class ToolRegistry {
         return {
           success: true,
           data: { waited: params.seconds },
+        };
+      },
+    });
+
+    // File system tools
+    this.registerTool({
+      name: 'listDirectory',
+      description: 'List files and directories in a specified path',
+      parameters: z.object({
+        path: z.string().default('/'),
+      }),
+      requiresApproval: false,
+      riskLevel: 'low',
+      execute: async (params) => {
+        const result = await desktopTools.listDirectory(params.path);
+        return {
+          success: result.success,
+          data: result.files,
+          error: result.error,
+        };
+      },
+    });
+
+    this.registerTool({
+      name: 'readFile',
+      description: 'Read the contents of a file',
+      parameters: z.object({
+        path: z.string(),
+      }),
+      requiresApproval: false,
+      riskLevel: 'low',
+      execute: async (params) => {
+        const result = await desktopTools.readFile(params.path);
+        return {
+          success: result.success,
+          data: result.content ? { content: result.content } : undefined,
+          error: result.error,
+        };
+      },
+    });
+
+    this.registerTool({
+      name: 'writeFile',
+      description: 'Write content to a file',
+      parameters: z.object({
+        path: z.string(),
+        content: z.string(),
+      }),
+      requiresApproval: false,
+      riskLevel: 'medium',
+      execute: async (params) => {
+        const result = await desktopTools.writeFile(params.path, params.content);
+        return {
+          success: result.success,
+          error: result.error,
+        };
+      },
+    });
+
+    this.registerTool({
+      name: 'createDirectory',
+      description: 'Create a new directory',
+      parameters: z.object({
+        path: z.string(),
+      }),
+      requiresApproval: false,
+      riskLevel: 'low',
+      execute: async (params) => {
+        const result = await desktopTools.createDirectory(params.path);
+        return {
+          success: result.success,
+          error: result.error,
+        };
+      },
+    });
+
+    this.registerTool({
+      name: 'deleteItem',
+      description: 'Delete a file or directory',
+      parameters: z.object({
+        path: z.string(),
+      }),
+      requiresApproval: false,
+      riskLevel: 'high',
+      execute: async (params) => {
+        const result = await desktopTools.deleteItem(params.path);
+        return {
+          success: result.success,
+          error: result.error,
+        };
+      },
+    });
+
+    // Process management tools
+    this.registerTool({
+      name: 'listProcesses',
+      description: 'List running processes',
+      parameters: z.object({}),
+      requiresApproval: false,
+      riskLevel: 'low',
+      execute: async () => {
+        const result = await desktopTools.listProcesses();
+        return {
+          success: result.success,
+          data: result.processes,
+          error: result.error,
+        };
+      },
+    });
+
+    this.registerTool({
+      name: 'killProcess',
+      description: 'Terminate a process by PID',
+      parameters: z.object({
+        pid: z.number().int().positive(),
+      }),
+      requiresApproval: false,
+      riskLevel: 'high',
+      execute: async (params) => {
+        const result = await desktopTools.killProcess(params.pid);
+        return {
+          success: result.success,
+          error: result.error,
+        };
+      },
+    });
+
+    // System info tool
+    this.registerTool({
+      name: 'getSystemInfo',
+      description: 'Get system information',
+      parameters: z.object({}),
+      requiresApproval: false,
+      riskLevel: 'low',
+      execute: async () => {
+        const result = await desktopTools.getSystemInfo();
+        return {
+          success: result.success,
+          data: result.info,
+          error: result.error,
+        };
+      },
+    });
+
+    // Keyboard shortcuts
+    this.registerTool({
+      name: 'key',
+      description: 'Press a keyboard key or key combination (e.g., "Return", "ctrl+c", "alt+Tab")',
+      parameters: z.object({
+        key: z.string(),
+      }),
+      requiresApproval: false,
+      riskLevel: 'medium',
+      execute: async (params) => {
+        const result = await desktopTools.key(params.key);
+        return {
+          success: result.success,
+          error: result.error,
+        };
+      },
+    });
+
+    // Open application
+    this.registerTool({
+      name: 'openApplication',
+      description: 'Open an application by name',
+      parameters: z.object({
+        appName: z.string(),
+      }),
+      requiresApproval: false,
+      riskLevel: 'medium',
+      execute: async (params) => {
+        const result = await desktopTools.openApplication(params.appName);
+        return {
+          success: result.success,
+          error: result.error,
         };
       },
     });
