@@ -184,11 +184,24 @@ export class LLMClient {
     };
     
     if (message.tool_calls) {
-      response.toolCalls = message.tool_calls.map((tc: any) => ({
-        id: tc.id,
-        name: tc.function.name,
-        arguments: JSON.parse(tc.function.arguments),
-      }));
+      response.toolCalls = message.tool_calls.map((tc: any) => {
+        try {
+          return {
+            id: tc.id,
+            name: tc.function.name,
+            arguments: typeof tc.function.arguments === 'string' 
+              ? JSON.parse(tc.function.arguments) 
+              : tc.function.arguments,
+          };
+        } catch (error) {
+          logger.error(`Failed to parse tool call arguments: ${tc.function.arguments}`, error);
+          return {
+            id: tc.id,
+            name: tc.function.name,
+            arguments: {},
+          };
+        }
+      });
     }
     
     return response;
@@ -233,10 +246,20 @@ export class LLMClient {
     }
     
     // Parse tool call arguments
-    const parsedToolCalls = toolCalls.map(tc => ({
-      ...tc,
-      arguments: tc.arguments ? JSON.parse(tc.arguments) : {},
-    }));
+    const parsedToolCalls = toolCalls.map(tc => {
+      try {
+        return {
+          ...tc,
+          arguments: tc.arguments ? JSON.parse(tc.arguments) : {},
+        };
+      } catch (error) {
+        logger.error(`Failed to parse streaming tool call arguments: ${tc.arguments}`, error);
+        return {
+          ...tc,
+          arguments: {},
+        };
+      }
+    });
     
     const response: LLMResponse = {
       content: chunks.join(''),
