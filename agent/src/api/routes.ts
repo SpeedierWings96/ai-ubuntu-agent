@@ -350,7 +350,7 @@ export function setupRoutes(
   app.get('/api/system/info', authenticateToken, async (_req: Request, res: Response) => {
     try {
       const result = await toolRegistry.executeTool(
-        'system_info',
+        'getSystemInfo',
         {},
         { approved: true }
       );

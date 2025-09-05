@@ -217,11 +217,12 @@ export class DesktopTools {
       const screenshotPath = '/tmp/screenshot.png';
       
       // Try different screenshot methods
+      const display = process.env.DESKTOP_DISPLAY || ':1';
       const methods = [
-        `DISPLAY=:1 import -window root ${screenshotPath}`,  // ImageMagick
-        `DISPLAY=:1 xwd -root -silent | convert xwd:- ${screenshotPath}`,  // xwd + convert
-        `DISPLAY=:1 gnome-screenshot -f ${screenshotPath}`,  // GNOME
-        `DISPLAY=:1 scrot ${screenshotPath}`,  // scrot as fallback
+        `DISPLAY=${display} import -window root ${screenshotPath}`,  // ImageMagick
+        `DISPLAY=${display} xwd -root -silent | convert xwd:- ${screenshotPath}`,  // xwd + convert
+        `DISPLAY=${display} gnome-screenshot -f ${screenshotPath}`,  // GNOME
+        `DISPLAY=${display} scrot ${screenshotPath}`,  // scrot as fallback
       ];
       
       let success = false;
@@ -245,7 +246,7 @@ export class DesktopTools {
       // Read the screenshot from desktop container's filesystem
       const { stdout: imageData } = await this.execInDesktop(`cat ${screenshotPath} | base64`);
       const base64Image = imageData.trim();
-      await this.execInDesktop(`rm -f ${screenshotPath}`).catch(() => {}); // Clean up
+      await this.execInDesktop(`rm -f ${screenshotPath}`).catch(() => {});
       
       return {
         success: true,
@@ -260,7 +261,8 @@ export class DesktopTools {
   async click(x: number, y: number, button: 'left' | 'right' | 'middle' = 'left'): Promise<{ success: boolean; error?: string }> {
     try {
       const buttonMap = { left: 1, middle: 2, right: 3 };
-      await this.execInDesktop(`DISPLAY=:1 xdotool mousemove ${x} ${y} click ${buttonMap[button]}`);
+      const display = process.env.DESKTOP_DISPLAY || ':1';
+      await this.execInDesktop(`DISPLAY=${display} xdotool mousemove ${x} ${y} click ${buttonMap[button]}`);
       return { success: true };
     } catch (error: any) {
       logger.error(`Failed to click: ${error.message}`);
@@ -272,7 +274,8 @@ export class DesktopTools {
     try {
       // Escape special characters for xdotool
       const escapedText = text.replace(/'/g, "'\\''");
-      await this.execInDesktop(`DISPLAY=:1 xdotool type '${escapedText}'`);
+      const display = process.env.DESKTOP_DISPLAY || ':1';
+      await this.execInDesktop(`DISPLAY=${display} xdotool type '${escapedText}'`);
       return { success: true };
     } catch (error: any) {
       logger.error(`Failed to type: ${error.message}`);
@@ -282,7 +285,8 @@ export class DesktopTools {
 
   async key(key: string): Promise<{ success: boolean; error?: string }> {
     try {
-      await this.execInDesktop(`DISPLAY=:1 xdotool key ${key}`);
+      const display = process.env.DESKTOP_DISPLAY || ':1';
+      await this.execInDesktop(`DISPLAY=${display} xdotool key ${key}`);
       return { success: true };
     } catch (error: any) {
       logger.error(`Failed to press key: ${error.message}`);

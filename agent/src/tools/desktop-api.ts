@@ -7,9 +7,9 @@ export class DesktopAPI {
   private baseUrl: string;
   
   constructor() {
-    // The desktop container exposes a command API on port 8080
+    // Command server default port is 8090
     const host = process.env.DESKTOP_HOST || 'desktop';
-    const port = process.env.DESKTOP_API_PORT || '8080';
+    const port = process.env.DESKTOP_API_PORT || '8090';
     this.baseUrl = `http://${host}:${port}`;
   }
   

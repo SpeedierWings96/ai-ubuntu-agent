@@ -11,6 +11,7 @@ app.use(express.json());
 
 const CONTAINER_NAME = process.env.DESKTOP_CONTAINER || 'ai-desktop';
 const PORT = process.env.COMMAND_PORT || 8090;
+const DISPLAY = process.env.DESKTOP_DISPLAY || ':1';
 
 app.post('/execute', (req, res) => {
   const { command } = req.body;
@@ -20,7 +21,7 @@ app.post('/execute', (req, res) => {
   }
   
   // Execute command in desktop container
-  const dockerCommand = `docker exec ${CONTAINER_NAME} bash -c "${command.replace(/"/g, '\\"')}"`;
+  const dockerCommand = `docker exec ${CONTAINER_NAME} bash -c "DISPLAY=${DISPLAY} ${command.replace(/"/g, '\\"')}"`;
   
   exec(dockerCommand, { maxBuffer: 10 * 1024 * 1024 }, (error, stdout, stderr) => {
     if (error) {
@@ -41,7 +42,7 @@ app.post('/execute', (req, res) => {
 
 app.post('/screenshot', (req, res) => {
   const commands = [
-    'DISPLAY=:0 import -window root /tmp/screenshot.png',
+    `DISPLAY=${DISPLAY} import -window root /tmp/screenshot.png`,
     'cat /tmp/screenshot.png | base64',
     'rm /tmp/screenshot.png'
   ];
