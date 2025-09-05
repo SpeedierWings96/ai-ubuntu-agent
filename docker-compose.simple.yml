@@ -8,6 +8,8 @@ services:
       - TZ=America/New_York
       - CUSTOM_USER=${CUSTOM_USER:-admin}
       - PASSWORD=${PASSWORD:-admin123}
+      - DOCKER_MODS=linuxserver/mods:universal-package-install
+      - INSTALL_PACKAGES=xdotool|scrot|imagemagick|x11-utils
     volumes:
       - ./desktop-data:/config
     ports:
@@ -25,11 +27,16 @@ services:
       - NODE_ENV=production
       - LOG_LEVEL=info
       - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - DESKTOP_HOST=desktop
+      - DOCKER_CONTAINER=true
     volumes:
       - ./agent-data:/data
+      - /var/run/docker.sock:/var/run/docker.sock  # Allow agent to control desktop via docker
     ports:
       - "3002:3000"
     restart: unless-stopped
+    depends_on:
+      - desktop
     networks:
       - ai-agent-network
 

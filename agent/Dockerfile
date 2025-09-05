@@ -21,8 +21,8 @@ FROM node:20-alpine
 
 WORKDIR /app
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
+# Install dumb-init for proper signal handling and docker-cli for desktop control
+RUN apk add --no-cache dumb-init docker-cli
 
 # Create non-root user
 RUN addgroup -g 1001 nodejs && \
