@@ -214,8 +214,6 @@ echo .env file created successfully!
 REM Create docker-compose.override.yml for custom settings
 echo Creating docker-compose.override.yml...
 (
-    echo version: '3.8'
-    echo.
     echo services:
     echo   desktop:
     echo     environment:
