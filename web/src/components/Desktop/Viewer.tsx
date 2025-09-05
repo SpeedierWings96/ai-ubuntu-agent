@@ -9,7 +9,7 @@ export default function DesktopViewer() {
   const [showScreenshot, setShowScreenshot] = useState(false);
   const { desktopScreenshot } = useStore();
   
-  const desktopUrl = import.meta.env.VITE_DESKTOP_URL || 'http://localhost:6080';
+  const desktopUrl = import.meta.env.VITE_DESKTOP_URL || 'http://localhost:3000';
 
   useEffect(() => {
     // Request initial screenshot
@@ -70,7 +70,7 @@ export default function DesktopViewer() {
         ) : (
           <iframe
             ref={iframeRef}
-            src={`${desktopUrl}/vnc.html?autoconnect=true&resize=remote&quality=7`}
+            src={desktopUrl}
             className="w-full h-full vnc-viewer"
             onLoad={handleIframeLoad}
             allow="clipboard-read; clipboard-write"
